@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Giá Nông Sản</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Quicksand', 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 5px 0 0 0;
+      background: linear-gradient(to right, #fff7e6, #ffffff);
+      color: #4b2e2e;
+      text-align: center;
+    }
+
+    h1, h2 {
+      color: #6b4226;
+      margin: 0.2rem 0;
+    }
+
+    h3 {
+      margin: 2px 0 4px 0;
+      padding: 0;
+      font-size: 1.5rem;
+      font-weight: auto;
+      color: #6b4226;
+    }
+
+    .section {
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 800px;
+      margin: 2px auto 10px auto;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 4px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2e6d9;
+      font-weight: bold;
+    }
+
+    /* Highlight province names */
+    td:first-child {
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .container {
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    .icon {
+      font-size: 50px;
+      color: #3498db;
+      margin-bottom: 10px;
+    }
+
+    .label {
+      font-weight: auto;
+      color: #2c3e50;
+    }
+
+    .time {
+      font-size: 18px;
+      font-weight: bold;
+      display: inline-block;
+      width: auto;
+      height: auto;
+    }
+
+    @media screen and (max-width: 500px) {
+      h1 {
+        font-size: 1rem;
+      }
+
+      h2 {
+        font-size: 1rem;
+      }
+
+      table {
+        width: 90%;
+        font-size: 14px;
+      }
+
+      th, td {
+        padding: 14px;
+      }
+
+      .container {
+        padding: 10px;
+      }
+
+      .time {
+        font-size: 16px;
+      }
+
+      .icon {
+        font-size: 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h3>🌾 Cập Nhật Giá Nông Sản 🌾</h3>
+  
+  <!-- Lịch âm dương -->
+  <div class="container">
+    <table class="time-table">
+      <tr>
+        <td colspan="3">
+          <span id="clock" class="time">--:--:--</span>
+        </td>
+      </tr>
+      <tr>
+        <th>Thứ</th>
+        <th>Dương lịch</th>
+        <th>Âm Lịch</th>
+      </tr>
+      <tr>
+        <td><span id="thu">Đang tải...</span></td>
+        <td><span id="ngayDuong">Đang tải...</span></td>
+        <td><span id="ngayAmLich">Đang tải...</span></td>
+      </tr>
+    </table>
+
+    <!-- Giá cà phê -->
+    <div class="section" id="caphe">
+      <div id="giaCaPhe">Đang tải giá cà phê...</div>
+    </div>
+
+    <!-- Giá tiêu -->
+    <div class="section" id="tieu">
+      <div id="giaTieu">Đang tải giá tiêu...</div>
+    </div>
+  </div>
+
+  <script>
+    // Danh sách khu vực cố định cho giá cà phê
+    const khuVucCoDinh = ["Đắk Nông", "Đắk Lắk", "Lâm Đồng", "Gia Lai"];
+
+    // Lấy giá cà phê & tiêu
+    async function loadGia() {
+      try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbyeIfQnmyK87tjkZwme_dbp5xtEIxB_aiNL7CqTCQdlKYvACE-Yyf235FXXhVIACndK/exec');
+        const data = await response.json();
+
+        // Cà phê
+        const cp = data.caphe;
+        let cpTable = `<b>Giá cà phê ngày ${cp[0].ngay}</b><br>`;
+        cpTable += `
+          <table>
+            <tr><th>Khu vực</th><th>Giá</th><th>Thay đổi</th></tr>
+        `;
+
+        // Chuẩn hóa dữ liệu từ API thành map để dễ tra cứu
+        const giaMap = {};
+        cp.forEach(item => {
+          let khuVuc = item.khuVuc
+            .replace("dak nong", "Đắk Nông")
+            .replace("dak lak", "Đắk Lắk")
+            .replace("lam dong", "Lâm Đồng")
+            .replace("gia lai", "Gia Lai");
+          giaMap[khuVuc] = { gia: item.gia, thayDoi: item.thayDoi };
+        });
+
+        // Hiển thị giá theo danh sách khu vực cố định
+        khuVucCoDinh.forEach(khuVuc => {
+          const info = giaMap[khuVuc] || { gia: null, thayDoi: 0 };
+          const gia = info.gia ? info.gia.toLocaleString('vi-VN') : 'Chưa có giá';
+          const thayDoi = info.thayDoi > 0 ? `➕ ${info.thayDoi.toLocaleString('vi-VN')}` :
+                          info.thayDoi < 0 ? `➖ ${Math.abs(info.thayDoi).toLocaleString('vi-VN')}` : `Không đổi`;
+          
+          cpTable += `<tr>
+            <td>${khuVuc}</td>
+            <td>${gia}</td>
+            <td>${thayDoi}</td>
+          </tr>`;
+        });
+
+        cpTable += `</table>`;
+        document.getElementById('giaCaPhe').innerHTML = cpTable;
+
+        // Tiêu (giữ nguyên logic cũ)
+        const tieu = data.tieu;
+        let tieuHTML = `<b>${tieu.tieuDe.replace("hôm nay ", "")}</b><br><table><tr><th>Khu Vực</th><th>Giá</th><th>Thay Đổi</th></tr>`;
+        tieu.data.forEach(item => {
+          let khuVuc = item.khuVuc
+            .replace("gia lai", "Gia Lai")
+            .replace("ba ria - vung tau", "Bà Rịa - Vũng Tàu")
+            .replace("dak lak", "Đắk Lắk")
+            .replace("binh phuoc", "Bình Phước")
+            .replace("dak nong", "Đắk Nông")
+            .charAt(0).toUpperCase() + item.khuVuc.slice(1).toLowerCase();
+
+          let change = item.thayDoi > 0 ? `➕ ${item.thayDoi.toLocaleString('vi-VN')}` :
+                      item.thayDoi < 0 ? `➖ ${Math.abs(item.thayDoi).toLocaleString('vi-VN')}` : `Không đổi`;
+          tieuHTML += `<tr><td>${khuVuc}</td><td>${item.giaMua.toLocaleString('vi-VN')}</td><td>${change}</td></tr>`;
+        });
+        tieuHTML += `</table>`;
+        document.getElementById('giaTieu').innerHTML = tieuHTML;
+
+      } catch (error) {
+        document.getElementById('giaCaPhe').innerHTML = "🚫 Không lấy được giá.";
+        document.getElementById('giaTieu').innerHTML = "🚫 Không lấy được giá.";
+        console.error('Lỗi:', error);
+      }
+    }
+
+    loadGia();
+    setInterval(loadGia, 300000); // Cập nhật mỗi 5 phút
+
+    // Cập nhật thời gian thực
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const timeString = `${hours}:${minutes}:${seconds}`;
+      document.getElementById('clock').textContent = timeString;
+
+      const weekdays = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      document.getElementById('thu').textContent = weekdays[now.getDay()];
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Gọi API lấy lịch âm dương
+    async function getLichAmDuong() {
+      try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbwmwE8vXEAr0nLBi6foKJexM6W9ZHu2qsXPhHQ763sx-lD3KawlTh4VFUzO4HO1SDk/exec');
+        const data = await response.json();
+        document.getElementById('ngayDuong').textContent = data.ngayDuong || 'Không rõ';
+        document.getElementById('ngayAmLich').textContent = data.ngayAmLich || 'Không rõ';
+      } catch (error) {
+        document.getElementById('ngayDuong').textContent = 'Lỗi';
+        document.getElementById('ngayAmLich').textContent = 'Lỗi';
+        console.error('Lỗi lấy lịch:', error);
+      }
+    }
+
+    getLichAmDuong();
+  </script>
+</body>
+</html>
